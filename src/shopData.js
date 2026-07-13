@@ -2,7 +2,7 @@
 // Baad mein backend (Flask API) se fetch hoga — images bhi tab backend se upload hongi.
 
 export const shopInfo = {
-  name: "Your Hardware Store",
+  name: "Shiva Build Mart",
   logo: "https://placehold.co/180x60/1f2937/ffffff?text=HARDWARE+STORE",
   tagline: "Quality Hardware & Fittings for Every Need",
 };
