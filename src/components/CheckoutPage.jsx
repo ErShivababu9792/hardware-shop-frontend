@@ -5,7 +5,7 @@ import { useCustomerAuth } from "../context/CustomerAuthContext";
 import "./CheckoutPage.css";
 
 function CheckoutPage() {
-  const { cartItems, cartTotal, clearCart } = useCart();
+  const { cartItems, cartTotal } = useCart();
   const { customer } = useCustomerAuth();
   const navigate = useNavigate();
 
@@ -18,12 +18,8 @@ function CheckoutPage() {
   });
 
   useEffect(() => {
-    if (customer) {
-      setFormData((prev) => ({
-        ...prev,
-        name: customer.name || "",
-        phone: customer.phone || "",
-      }));
+    if (!customer) {
+      navigate("/login");
     }
   }, [customer]);
 
@@ -33,35 +29,13 @@ function CheckoutPage() {
 
   function handlePlaceOrder(e) {
     e.preventDefault();
-
-    const existingOrders = JSON.parse(localStorage.getItem("allOrders")) || [];
-
-    const newOrder = {
-      id: "ORD" + Date.now(),
-      customerName: formData.name,
-      customerEmail: customer ? customer.email : null,
-      phone: formData.phone,
-      address: `${formData.address}, ${formData.city} - ${formData.pincode}`,
-      date: new Date().toLocaleDateString("en-IN"),
-      items: cartItems.map((item) => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-      total: cartTotal,
-      paymentStatus: "Paid",
-      orderStatus: "New",
-      trackingId: "",
-      note: "",
-    };
-
-    existingOrders.push(newOrder);
-    localStorage.setItem("allOrders", JSON.stringify(existingOrders));
-
-    clearCart();
-
+    console.log("Order details:", { formData, cartItems, cartTotal });
     alert("Order placed! (Payment integration baad mein add hoga)");
     navigate("/");
+  }
+
+  if (!customer) {
+    return null;
   }
 
   if (cartItems.length === 0) {
@@ -76,12 +50,6 @@ function CheckoutPage() {
   return (
     <div className="checkout-page">
       <h2>Checkout</h2>
-
-      {customer && (
-        <p className="checkout-logged-in-note">
-          Logged in as <strong>{customer.email}</strong> — details auto-filled hain, chaho to edit kar sakte ho.
-        </p>
-      )}
 
       <div className="checkout-content">
         <form className="checkout-form" onSubmit={handlePlaceOrder}>

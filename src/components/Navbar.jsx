@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { shopInfo, categories } from "../shopData";
 import { useCart } from "../context/CartContext";
 import { useCustomerAuth } from "../context/CustomerAuthContext";
-// import "./Navbar.css";
+import "./Navbar.css";
 
 function Navbar() {
   const { cartCount } = useCart();
@@ -18,7 +18,7 @@ function Navbar() {
     }
   }
 
-  function handleLogout() {
+  function handleCustomerLogout() {
     logout();
     navigate("/");
   }
@@ -45,18 +45,11 @@ function Navbar() {
 
           {customer ? (
             <div className="navbar-customer">
-              <span className="navbar-customer-name">👤 Hi, {customer.name}</span>
-              <Link to="/my-orders" className="navbar-orders-link">
-                My Orders
-              </Link>
-              <button className="navbar-logout-btn" onClick={handleLogout}>
-                Logout
-              </button>
+              <span>Hi, {customer.name.split(" ")[0]}</span>
+              <button className="navbar-logout-btn" onClick={handleCustomerLogout}>Logout</button>
             </div>
           ) : (
-            <Link to="/login" className="navbar-login-link">
-              👤 Login / Sign Up
-            </Link>
+            <Link to="/login" className="navbar-login-link">Login</Link>
           )}
 
           <Link to="/cart" className="navbar-cart">
