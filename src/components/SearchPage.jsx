@@ -1,5 +1,5 @@
 import { useSearchParams, Link } from "react-router-dom";
-import { products } from "../shopData";
+import { getProducts } from "../shopData";
 import { useCart } from "../context/CartContext";
 import "./SearchPage.css";
 
@@ -8,6 +8,7 @@ function SearchPage() {
   const query = searchParams.get("q") || "";
   const { addToCart } = useCart();
 
+  const products = getProducts();
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(query.toLowerCase())
   );

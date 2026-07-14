@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { products } from "../shopData";
+import { getProducts } from "../shopData";
 import { useCart } from "../context/CartContext";
 import "./ProductDetail.css";
 
@@ -8,6 +8,7 @@ function ProductDetail() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
+  const products = getProducts();
   const product = products.find((p) => p.id === parseInt(id));
 
   if (!product) {

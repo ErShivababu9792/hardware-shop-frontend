@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { products as initialProducts, categories } from "../shopData";
+import { getProducts, saveProducts, categories } from "../shopData";
 import "./AdminPanel.css";
 
 function AdminPanel() {
+  const initialProducts = getProducts().map((p) => ({
+    ...p,
+    images: p.images || (p.image ? [p.image] : []),
+  }));
+
   const [productList, setProductList] = useState(initialProducts);
   const [formData, setFormData] = useState({
     name: "",
@@ -12,7 +17,7 @@ function AdminPanel() {
     price: "",
     unit: "",
     stock: "",
-    image: "",
+    images: [],
     description: "",
   });
   const [editingId, setEditingId] = useState(null);
@@ -21,6 +26,29 @@ function AdminPanel() {
 
   function handleChange(e) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  }
+
+  function readFilesAsDataURLs(files) {
+    const arr = Array.from(files || []);
+    return Promise.all(
+      arr.map(
+        (file) =>
+          new Promise((res, rej) => {
+            const fr = new FileReader();
+            fr.onload = () => res(fr.result);
+            fr.onerror = rej;
+            fr.readAsDataURL(file);
+          })
+      )
+    );
+  }
+
+  function handleFileChange(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    readFilesAsDataURLs(files).then((urls) => {
+      setFormData((fd) => ({ ...fd, images: [...(fd.images || []), ...urls] }));
+    });
   }
 
   function handleSubmit(e) {
@@ -43,7 +71,7 @@ function AdminPanel() {
       };
       setProductList([...productList, newProduct]);
     }
-    setFormData({ name: "", categoryId: categories[0].id, brand: "", price: "", unit: "", stock: "", image: "", description: "" });
+    setFormData({ name: "", categoryId: categories[0].id, brand: "", price: "", unit: "", stock: "", images: [], description: "" });
   }
 
   function handleEdit(product) {
@@ -58,9 +86,32 @@ function AdminPanel() {
     }
   }
 
+  useEffect(() => {
+    saveProducts(productList);
+  }, [productList]);
+
+  // Modal gallery state
+  const [gallery, setGallery] = useState({ open: false, images: [], index: 0 });
+
+  function openGallery(images, index = 0) {
+    setGallery({ open: true, images, index });
+  }
+
+  function closeGallery() {
+    setGallery({ open: false, images: [], index: 0 });
+  }
+
+  function prevImage() {
+    setGallery((g) => ({ ...g, index: (g.index - 1 + g.images.length) % g.images.length }));
+  }
+
+  function nextImage() {
+    setGallery((g) => ({ ...g, index: (g.index + 1) % g.images.length }));
+  }
+
   function handleCancelEdit() {
     setEditingId(null);
-    setFormData({ name: "", categoryId: categories[0].id, brand: "", price: "", unit: "", stock: "", image: "", description: "" });
+    setFormData({ name: "", categoryId: categories[0].id, brand: "", price: "", unit: "", stock: "", images: [], description: "" });
   }
 
   function handleLogout() {
@@ -153,8 +204,21 @@ function AdminPanel() {
               <label>Stock quantity</label>
               <input type="number" name="stock" value={formData.stock} onChange={handleChange} required />
 
-              <label>Image URL</label>
-              <input type="text" name="image" value={formData.image} onChange={handleChange} />
+              <label>Upload images</label>
+              <input type="file" name="images" accept="image/*" multiple onChange={handleFileChange} />
+
+              {formData.images && formData.images.length > 0 && (
+                <div className="image-previews">
+                  {formData.images.map((src, idx) => (
+                    <div className="preview-item" key={idx}>
+                      <img src={src} alt={`preview-${idx}`} />
+                      <button type="button" className="remove-preview" onClick={() => {
+                        setFormData((fd) => ({ ...fd, images: fd.images.filter((_, i) => i !== idx) }));
+                      }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <label>Description</label>
               <textarea name="description" value={formData.description} onChange={handleChange} />
@@ -189,7 +253,16 @@ function AdminPanel() {
                 <tbody>
                   {productList.map((product) => (
                     <tr key={product.id}>
-                      <td><img src={product.image} alt={product.name} /></td>
+                          <td>
+                            <img
+                              src={(product.images && product.images[0]) || product.image}
+                              alt={product.name}
+                              style={{ cursor: (product.images && product.images.length) ? 'pointer' : 'default' }}
+                              onClick={() => {
+                                if (product.images && product.images.length) openGallery(product.images, 0);
+                              }}
+                            />
+                          </td>
                       <td>{product.name}</td>
                       <td>{categories.find((c) => c.id === product.categoryId)?.name}</td>
                       <td>₹{product.price}</td>
@@ -214,6 +287,23 @@ function AdminPanel() {
           </div>
         </div>
       </main>
+      {gallery.open && (
+        <div className="image-modal" onClick={closeGallery}>
+          <div className="image-modal-inner" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={closeGallery}>✕</button>
+            <img src={gallery.images[gallery.index]} alt={`img-${gallery.index}`} />
+            <div className="modal-controls">
+              <button onClick={prevImage}>‹ Prev</button>
+              <button onClick={nextImage}>Next ›</button>
+            </div>
+            <div className="modal-thumbs">
+              {gallery.images.map((src, i) => (
+                <img key={i} src={src} className={i === gallery.index ? 'active' : ''} onClick={() => setGallery((g) => ({ ...g, index: i }))} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,8 +2,8 @@
 // Baad mein backend (Flask API) se fetch hoga — images bhi tab backend se upload hongi.
 
 export const shopInfo = {
-  name: "Shiva Build Mart",
-  logo: "https://placehold.co/180x60/1f2937/ffffff?text=HARDWARE+STORE",
+  name: "SHiva Build MArt",
+  logo: "https://placehold.co/220x60/1f2937/ffffff?text=SHiva+Build+MArt",
   tagline: "Quality Hardware & Fittings for Every Need",
 };
 
@@ -36,7 +36,7 @@ export const categories = [
   { id: "paints", name: "Paints" },
 ];
 
-export const products = [
+const defaultProducts = [
   {
     id: 1,
     name: "Cabinet Hinge (Soft Close)",
@@ -103,8 +103,18 @@ export const products = [
     image: "https://placehold.co/300x300/1d4ed8/ffffff?text=PVC+Pipe",
     description: "Standard PVC pipe for plumbing use.",
   },
-  
 ];
+
+export function getProducts() {
+  const savedProducts = localStorage.getItem("products");
+  return savedProducts ? JSON.parse(savedProducts) : defaultProducts;
+}
+
+export function saveProducts(products) {
+  localStorage.setItem("products", JSON.stringify(products));
+}
+
+export const products = defaultProducts;
 export const orders = [
   {
     id: "ORD1001",

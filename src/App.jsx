@@ -7,6 +7,7 @@ import ProductDetail from "./components/ProductDetail";
 import CategoryPage from "./components/CategoryPage";
 import SearchPage from "./components/SearchPage";
 import CheckoutPage from "./components/CheckoutPage";
+import MyOrders from "./pages/MyOrders";
 import AdminPanel from "./components/AdminPanel";
 import AdminLogin from "./components/AdminLogin";
 import OrdersPage from "./components/OrdersPage";
@@ -34,6 +35,7 @@ function AppContent() {
         <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/my-orders" element={<MyOrders />} />
 
         <Route path="/signup" element={<CustomerSignup />} />
         <Route path="/login" element={<CustomerLogin />} />

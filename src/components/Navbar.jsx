@@ -25,8 +25,14 @@ function Navbar() {
 
   return (
     <nav className="navbar">
-      <div className="navbar-top">
-        <img src={shopInfo.logo} alt={shopInfo.name} className="navbar-logo" />
+      <div className="container navbar-top">
+        <div className="brand">
+          <img
+            src={shopInfo.logo}
+            alt={shopInfo.name}
+            className="navbar-logo"
+          />
+        </div>
 
         <form className="navbar-search" onSubmit={handleSearch}>
           <input
@@ -44,12 +50,24 @@ function Navbar() {
           </a>
 
           {customer ? (
-            <div className="navbar-customer">
-              <span>Hi, {customer.name.split(" ")[0]}</span>
-              <button className="navbar-logout-btn" onClick={handleCustomerLogout}>Logout</button>
-            </div>
+            <>
+              <div className="navbar-customer">
+                <span>Hi, {customer.name.split(" ")[0]}</span>
+                <button
+                  className="navbar-logout-btn"
+                  onClick={handleCustomerLogout}
+                >
+                  Logout
+                </button>
+              </div>
+              <Link to="/my-orders" className="navbar-orders-link">
+                My Orders
+              </Link>
+            </>
           ) : (
-            <Link to="/login" className="navbar-login-link">Login</Link>
+            <Link to="/login" className="navbar-login-link">
+              Login
+            </Link>
           )}
 
           <Link to="/cart" className="navbar-cart">

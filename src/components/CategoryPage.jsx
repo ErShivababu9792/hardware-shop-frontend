@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { products, categories } from "../shopData";
+import { getProducts, categories } from "../shopData";
 import { useCart } from "../context/CartContext";
 import "./CategoryPage.css";
 
@@ -7,6 +7,7 @@ function CategoryPage() {
   const { categoryId } = useParams();
   const { addToCart } = useCart();
 
+  const products = getProducts();
   const category = categories.find((c) => c.id === categoryId);
   const filteredProducts = products.filter((p) => p.categoryId === categoryId);
 
@@ -25,7 +26,9 @@ function CategoryPage() {
                 <h3>{product.name}</h3>
               </Link>
               <p className="product-brand">{product.brand}</p>
-              <p className="product-price">₹{product.price} / {product.unit}</p>
+              <p className="product-price">
+                ₹{product.price} / {product.unit}
+              </p>
               <button
                 className="add-to-cart-btn"
                 onClick={() => addToCart(product)}

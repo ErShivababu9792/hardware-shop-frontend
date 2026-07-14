@@ -4,10 +4,16 @@ import { useCart } from "../context/CartContext";
 import { useCustomerAuth } from "../context/CustomerAuthContext";
 import "./CheckoutPage.css";
 
+const BACKEND_URL = "http://127.0.0.1:5000";
+
 function CheckoutPage() {
-  const { cartItems, cartTotal } = useCart();
+  const { cartItems, cartTotal, clearCart } = useCart();
   const { customer } = useCustomerAuth();
   const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(false);
+
+  const [paymentMethod, setPaymentMethod] = useState("cod");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -21,22 +27,155 @@ function CheckoutPage() {
     if (!customer) {
       navigate("/login");
     }
-  }, [customer]);
+  }, [customer, navigate]);
 
   function handleChange(e) {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   }
 
-  function handlePlaceOrder(e) {
-    e.preventDefault();
-    console.log("Order details:", { formData, cartItems, cartTotal });
-    alert("Order placed! (Payment integration baad mein add hoga)");
+  function saveOrder(paymentStatus) {
+    const newOrder = {
+      id: "ORD" + Date.now(),
+      customerEmail: customer.email,
+      customerName: formData.name || customer.name,
+      phone: formData.phone || customer.phone,
+      address: `${formData.address}, ${formData.city}, ${formData.pincode}`,
+      items: cartItems.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      total: cartTotal,
+      paymentMethod,
+      paymentStatus,
+      orderStatus: "New",
+      date: new Date().toISOString().split("T")[0],
+      trackingId: "",
+      note: "",
+    };
+
+    const existingOrders = JSON.parse(localStorage.getItem("allOrders")) || [];
+    existingOrders.push(newOrder);
+    localStorage.setItem("allOrders", JSON.stringify(existingOrders));
+
+    clearCart();
     navigate("/");
   }
 
-  if (!customer) {
-    return null;
+  async function handlePlaceOrder(e) {
+    e.preventDefault();
+
+    if (loading) return;
+
+    if (paymentMethod === "cod") {
+      saveOrder("Pending");
+      alert("Order placed successfully!");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (!window.Razorpay) {
+        throw new Error(
+          "Payment gateway is not loaded. Refresh the page and try again.",
+        );
+      }
+
+      const orderResponse = await fetch(`${BACKEND_URL}/api/create-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: cartTotal,
+        }),
+      });
+
+      if (!orderResponse.ok) {
+        const errorText = await orderResponse.text();
+        throw new Error(
+          `Unable to create order: ${errorText || orderResponse.statusText}`,
+        );
+      }
+
+      const orderData = await orderResponse.json();
+
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Hardware Shop",
+        description: "Order Payment",
+        order_id: orderData.order_id,
+        handler: async function (response) {
+          try {
+            const verifyResponse = await fetch(
+              `${BACKEND_URL}/api/verify-payment`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                }),
+              },
+            );
+
+            const verifyData = await verifyResponse.json();
+
+            if (!verifyResponse.ok || !verifyData.success) {
+              console.error("Payment verification failed:", verifyData);
+              alert("Payment Verification Failed");
+              return;
+            }
+
+            saveOrder("Paid");
+            alert("Payment Successful!");
+          } catch (err) {
+            console.error(err);
+            alert("Verification Error");
+          } finally {
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: formData.name,
+          contact: formData.phone,
+          email: customer.email,
+        },
+        theme: {
+          color: "#2c7a2c",
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+
+      razorpay.on("payment.failed", function (response) {
+        console.error(response.error);
+        alert(response.error.description || "Payment failed.");
+        setLoading(false);
+      });
+
+      razorpay.open();
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Payment error");
+      setLoading(false);
+    }
   }
+  if (!customer) return null;
 
   if (cartItems.length === 0) {
     return (
@@ -97,19 +236,52 @@ function CheckoutPage() {
             required
           />
 
-          <button type="submit" className="place-order-btn">
-            Place Order (₹{cartTotal})
+          <label>Payment Method</label>
+
+          <div className="payment-method">
+            <label>
+              <input
+                type="radio"
+                value="cod"
+                checked={paymentMethod === "cod"}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              />
+              Cash on Delivery
+            </label>
+
+            <label>
+              <input
+                type="radio"
+                value="online"
+                checked={paymentMethod === "online"}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              />
+              Pay Online
+            </label>
+          </div>
+
+          <button type="submit" className="place-order-btn" disabled={loading}>
+            {loading
+              ? "Processing..."
+              : paymentMethod === "cod"
+                ? "Place Order"
+                : `Pay ₹${cartTotal}`}
           </button>
         </form>
 
         <div className="order-summary">
           <h3>Order Summary</h3>
+
           {cartItems.map((item) => (
             <div key={item.id} className="summary-item">
-              <span>{item.name} x {item.quantity}</span>
+              <span>
+                {item.name} × {item.quantity}
+              </span>
+
               <span>₹{item.price * item.quantity}</span>
             </div>
           ))}
+
           <div className="summary-total">
             <span>Total</span>
             <span>₹{cartTotal}</span>

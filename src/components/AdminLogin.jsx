@@ -12,7 +12,9 @@ function AdminLogin() {
 
   function handleLogin(e) {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
+    const trimmedPassword = password.trim();
+
+    if (trimmedPassword === ADMIN_PASSWORD) {
       localStorage.setItem("isAdminLoggedIn", "true");
       navigate("/admin");
     } else {
@@ -28,8 +30,12 @@ function AdminLogin() {
         <input
           type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (error) setError("");
+          }}
           placeholder="Enter admin password"
+          autoComplete="current-password"
           required
         />
         {error && <p className="login-error">{error}</p>}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { banners, offers, categories, products } from "../shopData";
+import { banners, offers, categories, getProducts } from "../shopData";
 import { useCart } from "../context/CartContext";
 import { Link } from "react-router-dom";
 import "./Homepage.css";
@@ -7,6 +7,7 @@ import "./Homepage.css";
 function Homepage() {
   const { addToCart } = useCart();
   const [toastMessage, setToastMessage] = useState("");
+  const [products] = useState(getProducts());
 
   function handleAddToCart(product) {
     addToCart(product);
@@ -48,7 +49,11 @@ function Homepage() {
         <h2>Shop by Category</h2>
         <div className="category-list">
           {categories.map((cat) => (
-            <Link key={cat.id} to={`/category/${cat.id}`} className="category-card">
+            <Link
+              key={cat.id}
+              to={`/category/${cat.id}`}
+              className="category-card"
+            >
               {cat.name}
             </Link>
           ))}
@@ -66,7 +71,9 @@ function Homepage() {
                 <h3>{product.name}</h3>
               </Link>
               <p className="product-brand">{product.brand}</p>
-              <p className="product-price">₹{product.price} / {product.unit}</p>
+              <p className="product-price">
+                ₹{product.price} / {product.unit}
+              </p>
               <button
                 className="add-to-cart-btn"
                 onClick={() => handleAddToCart(product)}

@@ -1,88 +1,75 @@
 .checkout-page {
-  max-width: 900px;
-  margin: 20px auto;
-  padding: 16px;
+  max-width: 980px;
+  margin: 26px auto;
+  padding: 22px;
 }
-
 .checkout-content {
-  display: flex;
-  gap: 30px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 28px;
 }
-
 .checkout-form {
-  flex: 2;
-  min-width: 280px;
-  display: flex;
-  flex-direction: column;
+  background: var(--card);
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
 }
-
 .checkout-form label {
+  display: block;
   margin-top: 12px;
-  margin-bottom: 4px;
-  font-size: 14px;
-  font-weight: bold;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-weight: 600;
 }
-
 .checkout-form input,
 .checkout-form textarea {
+  width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
-
 .place-order-btn {
-  margin-top: 20px;
-  background: #2c7a2c;
+  margin-top: 18px;
+  background: var(--accent-2);
   color: white;
-  border: none;
   padding: 12px;
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: 10px;
+  border: 0;
   cursor: pointer;
 }
-
 .order-summary {
-  flex: 1;
-  min-width: 250px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 16px;
-  height: fit-content;
+  background: var(--card);
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
 }
-
 .summary-item {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
-  margin: 8px 0;
+  border-bottom: 1px dashed rgba(15, 23, 42, 0.04);
+  padding: 10px 0;
 }
-
 .summary-total {
   display: flex;
   justify-content: space-between;
-  font-weight: bold;
-  font-size: 16px;
-  border-top: 1px solid #ddd;
-  margin-top: 10px;
-  padding-top: 10px;
+  font-weight: 800;
+  margin-top: 12px;
+  padding-top: 8px;
 }
 .checkout-logged-in-note {
   background: #f0fdf4;
   color: #166534;
   border: 1px solid #bbf7d0;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  margin-bottom: 16px;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 14px;
 }
-.checkout-logged-in-note {
-  background: #f0fdf4;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  margin-bottom: 16px;
+
+@media (max-width: 880px) {
+  .checkout-content {
+    grid-template-columns: 1fr;
+  }
+  .order-summary {
+    order: 2;
+  }
 }
