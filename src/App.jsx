@@ -7,13 +7,15 @@ import ProductDetail from "./components/ProductDetail";
 import CategoryPage from "./components/CategoryPage";
 import SearchPage from "./components/SearchPage";
 import CheckoutPage from "./components/CheckoutPage";
-import MyOrders from "./pages/MyOrders";
+import OrderConfirmation from "./components/OrderConfirmation";
 import AdminPanel from "./components/AdminPanel";
 import AdminLogin from "./components/AdminLogin";
 import OrdersPage from "./components/OrdersPage";
+import ContentPage from "./components/ContentPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import CustomerSignup from "./components/CustomerSignup";
 import CustomerLogin from "./components/CustomerLogin";
+import MyOrdersPage from "./components/MyOrdersPage";
 
 import { CartProvider } from "./context/CartContext";
 import { CustomerAuthProvider } from "./context/CustomerAuthContext";
@@ -35,7 +37,8 @@ function AppContent() {
         <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/my-orders" element={<MyOrders />} />
+        <Route path="/order-confirmation" element={<OrderConfirmation />} />
+        <Route path="/my-orders" element={<MyOrdersPage />} />
 
         <Route path="/signup" element={<CustomerSignup />} />
         <Route path="/login" element={<CustomerLogin />} />
@@ -56,6 +59,15 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <OrdersPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/content"
+          element={
+            <ProtectedRoute>
+              <ContentPage />
             </ProtectedRoute>
           }
         />

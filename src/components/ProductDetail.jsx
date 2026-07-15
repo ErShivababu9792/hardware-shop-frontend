@@ -1,15 +1,34 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getProducts } from "../shopData";
 import { useCart } from "../context/CartContext";
 import "./ProductDetail.css";
+
+const BACKEND_URL = "";
 
 function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const products = getProducts();
-  const product = products.find((p) => p.id === parseInt(id));
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/products`)
+      .then((res) => res.json())
+      .then((data) => {
+        const found = data.find((p) => p.id === parseInt(id));
+        setProduct(found);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching product:", err);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) {
+    return <div className="product-detail">Loading...</div>;
+  }
 
   if (!product) {
     return <div className="product-detail">Product not found.</div>;

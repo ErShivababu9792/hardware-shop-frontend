@@ -20,20 +20,20 @@ function Signup() {
     setError("");
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Password aur Confirm Password match nahi kar rahe");
+      setError("Password and confirm password do not match.");
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("Password kam se kam 6 characters ka hona chahiye");
+      setError("Password must be at least 6 characters long.");
       return;
     }
 
-    const result = signup(formData.name, formData.email, formData.phone, formData.password);
+    const result = await signup(formData.name, formData.email, formData.phone, formData.password);
 
     if (result.success) {
       navigate("/");
@@ -46,7 +46,7 @@ function Signup() {
     <div className="auth-page">
       <div className="auth-card">
         <h2>Create Account</h2>
-        <p className="auth-subtitle">Naya account banayein aur shopping shuru karein</p>
+        <p className="auth-subtitle">Create an account and start shopping</p>
 
         {error && <div className="auth-error">{error}</div>}
 
@@ -102,7 +102,7 @@ function Signup() {
         </form>
 
         <p className="auth-switch">
-          Pehle se account hai? <Link to="/login">Login karein</Link>
+          Already have an account? <Link to="/login">Login</Link>
         </p>
       </div>
     </div>

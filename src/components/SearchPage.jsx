@@ -1,27 +1,43 @@
+import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { getProducts } from "../shopData";
 import { useCart } from "../context/CartContext";
 import "./SearchPage.css";
+
+const BACKEND_URL = "";
 
 function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
   const { addToCart } = useCart();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const products = getProducts();
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(query.toLowerCase())
-  );
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/products`)
+      .then((res) => res.json())
+      .then((data) => {
+        setProducts(
+          data.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
+        );
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching products:", err);
+        setLoading(false);
+      });
+  }, [query]);
 
   return (
     <div className="search-page">
       <h2>Search results for "{query}"</h2>
 
-      {filteredProducts.length === 0 ? (
+      {loading ? (
+        <p>Loading...</p>
+      ) : products.length === 0 ? (
         <p>No products found.</p>
       ) : (
         <div className="product-grid">
-          {filteredProducts.map((product) => (
+          {products.map((product) => (
             <div key={product.id} className="product-card">
               <Link to={`/product/${product.id}`}>
                 <img src={product.image} alt={product.name} />

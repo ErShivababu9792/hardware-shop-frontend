@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 
 const CustomerAuthContext = createContext();
+const BACKEND_URL = "";
 
 export function CustomerAuthProvider({ children }) {
   const [customer, setCustomer] = useState(null);
@@ -12,38 +13,50 @@ export function CustomerAuthProvider({ children }) {
     }
   }, []);
 
-  function signup(name, email, phone, password) {
-    const existingCustomers = JSON.parse(localStorage.getItem("allCustomers")) || [];
+  async function signup(name, email, phone, password) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone, password }),
+      });
 
-    const alreadyExists = existingCustomers.find((c) => c.email === email);
-    if (alreadyExists) {
-      return { success: false, message: "Is email se pehle se account bana hua hai" };
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem("customerData", JSON.stringify(data.customer));
+        setCustomer(data.customer);
+        return { success: true };
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (err) {
+      console.error("Signup error:", err);
+      return { success: false, message: "Unable to connect to the server. Please try again later." };
     }
-
-    const newCustomer = { name, email, phone, password };
-    existingCustomers.push(newCustomer);
-    localStorage.setItem("allCustomers", JSON.stringify(existingCustomers));
-
-    const customerToStore = { name, email, phone };
-    localStorage.setItem("customerData", JSON.stringify(customerToStore));
-    setCustomer(customerToStore);
-
-    return { success: true };
   }
 
-  function login(email, password) {
-    const existingCustomers = JSON.parse(localStorage.getItem("allCustomers")) || [];
-    const found = existingCustomers.find((c) => c.email === email && c.password === password);
+  async function login(email, password) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!found) {
-      return { success: false, message: "Email ya password galat hai" };
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem("customerData", JSON.stringify(data.customer));
+        setCustomer(data.customer);
+        return { success: true };
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      return { success: false, message: "Unable to connect to the server. Please try again later." };
     }
-
-    const customerToStore = { name: found.name, email: found.email, phone: found.phone };
-    localStorage.setItem("customerData", JSON.stringify(customerToStore));
-    setCustomer(customerToStore);
-
-    return { success: true };
   }
 
   function logout() {

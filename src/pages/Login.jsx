@@ -14,10 +14,10 @@ function Login() {
     setError("");
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
-    const result = login(formData.email, formData.password);
+    const result = await login(formData.email, formData.password);
 
     if (result.success) {
       navigate("/");
@@ -30,7 +30,7 @@ function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <h2>Login</h2>
-        <p className="auth-subtitle">Apne account mein login karein</p>
+        <p className="auth-subtitle">Sign in to your account</p>
 
         {error && <div className="auth-error">{error}</div>}
 
@@ -59,7 +59,7 @@ function Login() {
         </form>
 
         <p className="auth-switch">
-          Account nahi hai? <Link to="/signup">Sign Up karein</Link>
+          Don’t have an account? <Link to="/signup">Sign up</Link>
         </p>
       </div>
     </div>

@@ -13,9 +13,9 @@ function CustomerLogin() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const result = login(formData.email, formData.password);
+    const result = await login(formData.email, formData.password);
     if (result.success) {
       navigate("/");
     } else {

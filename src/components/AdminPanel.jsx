@@ -1,15 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { getProducts, saveProducts, categories } from "../shopData";
+import { categories } from "../shopData";
 import "./AdminPanel.css";
 
-function AdminPanel() {
-  const initialProducts = getProducts().map((p) => ({
-    ...p,
-    images: p.images || (p.image ? [p.image] : []),
-  }));
+const BACKEND_URL = "http://127.0.0.1:5000";
 
-  const [productList, setProductList] = useState(initialProducts);
+function AdminPanel() {
+  const [productList, setProductList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     categoryId: categories[0].id,
@@ -17,61 +15,66 @@ function AdminPanel() {
     price: "",
     unit: "",
     stock: "",
-    images: [],
+    image: "",
     description: "",
   });
   const [editingId, setEditingId] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  function fetchProducts() {
+    setLoading(true);
+    fetch(`${BACKEND_URL}/api/products`)
+      .then((res) => res.json())
+      .then((data) => {
+        setProductList(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching products:", err);
+        setLoading(false);
+      });
+  }
+
   function handleChange(e) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
-  function readFilesAsDataURLs(files) {
-    const arr = Array.from(files || []);
-    return Promise.all(
-      arr.map(
-        (file) =>
-          new Promise((res, rej) => {
-            const fr = new FileReader();
-            fr.onload = () => res(fr.result);
-            fr.onerror = rej;
-            fr.readAsDataURL(file);
-          })
-      )
-    );
-  }
-
-  function handleFileChange(e) {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    readFilesAsDataURLs(files).then((urls) => {
-      setFormData((fd) => ({ ...fd, images: [...(fd.images || []), ...urls] }));
-    });
-  }
-
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (editingId) {
-      setProductList(
-        productList.map((p) =>
-          p.id === editingId
-            ? { ...formData, id: editingId, price: Number(formData.price), stock: Number(formData.stock) }
-            : p
-        )
-      );
-      setEditingId(null);
-    } else {
-      const newProduct = {
-        ...formData,
-        id: Date.now(),
-        price: Number(formData.price),
-        stock: Number(formData.stock),
-      };
-      setProductList([...productList, newProduct]);
+
+    const payload = {
+      ...formData,
+      price: Number(formData.price),
+      stock: Number(formData.stock),
+    };
+
+    try {
+      if (editingId) {
+        await fetch(`${BACKEND_URL}/api/products/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        setEditingId(null);
+      } else {
+        await fetch(`${BACKEND_URL}/api/products`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      fetchProducts();
+      setFormData({ name: "", categoryId: categories[0].id, brand: "", price: "", unit: "", stock: "", image: "", description: "" });
+    } catch (err) {
+      console.error("Error saving product:", err);
+      alert("Product save karne mein error aayi.");
     }
-    setFormData({ name: "", categoryId: categories[0].id, brand: "", price: "", unit: "", stock: "", images: [], description: "" });
   }
 
   function handleEdit(product) {
@@ -80,38 +83,21 @@ function AdminPanel() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function handleDelete(id) {
+  async function handleDelete(id) {
     if (window.confirm("Kya aap is product ko delete karna chahte hain?")) {
-      setProductList(productList.filter((p) => p.id !== id));
+      try {
+        await fetch(`${BACKEND_URL}/api/products/${id}`, { method: "DELETE" });
+        fetchProducts();
+      } catch (err) {
+        console.error("Error deleting product:", err);
+        alert("Product delete karne mein error aayi.");
+      }
     }
-  }
-
-  useEffect(() => {
-    saveProducts(productList);
-  }, [productList]);
-
-  // Modal gallery state
-  const [gallery, setGallery] = useState({ open: false, images: [], index: 0 });
-
-  function openGallery(images, index = 0) {
-    setGallery({ open: true, images, index });
-  }
-
-  function closeGallery() {
-    setGallery({ open: false, images: [], index: 0 });
-  }
-
-  function prevImage() {
-    setGallery((g) => ({ ...g, index: (g.index - 1 + g.images.length) % g.images.length }));
-  }
-
-  function nextImage() {
-    setGallery((g) => ({ ...g, index: (g.index + 1) % g.images.length }));
   }
 
   function handleCancelEdit() {
     setEditingId(null);
-    setFormData({ name: "", categoryId: categories[0].id, brand: "", price: "", unit: "", stock: "", images: [], description: "" });
+    setFormData({ name: "", categoryId: categories[0].id, brand: "", price: "", unit: "", stock: "", image: "", description: "" });
   }
 
   function handleLogout() {
@@ -119,12 +105,20 @@ function AdminPanel() {
     navigate("/admin-login");
   }
 
-  function updateStock(id, change) {
-    setProductList(
-      productList.map((p) =>
-        p.id === id ? { ...p, stock: Math.max(0, p.stock + change) } : p
-      )
-    );
+  async function updateStock(id, change) {
+    const product = productList.find((p) => p.id === id);
+    const newStock = Math.max(0, product.stock + change);
+
+    try {
+      await fetch(`${BACKEND_URL}/api/products/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...product, stock: newStock }),
+      });
+      fetchProducts();
+    } catch (err) {
+      console.error("Error updating stock:", err);
+    }
   }
 
   const totalStock = productList.reduce((sum, p) => sum + p.stock, 0);
@@ -140,6 +134,9 @@ function AdminPanel() {
           </Link>
           <Link to="/admin/orders" className={`sidebar-nav-item ${location.pathname === "/admin/orders" ? "active" : ""}`}>
             Orders
+          </Link>
+          <Link to="/admin/content" className={`sidebar-nav-item ${location.pathname === "/admin/content" ? "active" : ""}`}>
+            Homepage Content
           </Link>
         </nav>
         <button className="sidebar-logout" onClick={handleLogout}>Logout</button>
@@ -204,21 +201,8 @@ function AdminPanel() {
               <label>Stock quantity</label>
               <input type="number" name="stock" value={formData.stock} onChange={handleChange} required />
 
-              <label>Upload images</label>
-              <input type="file" name="images" accept="image/*" multiple onChange={handleFileChange} />
-
-              {formData.images && formData.images.length > 0 && (
-                <div className="image-previews">
-                  {formData.images.map((src, idx) => (
-                    <div className="preview-item" key={idx}>
-                      <img src={src} alt={`preview-${idx}`} />
-                      <button type="button" className="remove-preview" onClick={() => {
-                        setFormData((fd) => ({ ...fd, images: fd.images.filter((_, i) => i !== idx) }));
-                      }}>✕</button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <label>Image URL</label>
+              <input type="text" name="image" value={formData.image} onChange={handleChange} />
 
               <label>Description</label>
               <textarea name="description" value={formData.description} onChange={handleChange} />
@@ -238,72 +222,50 @@ function AdminPanel() {
 
           <div className="admin-card list-card">
             <h2>All products ({productList.length})</h2>
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {productList.map((product) => (
-                    <tr key={product.id}>
-                          <td>
-                            <img
-                              src={(product.images && product.images[0]) || product.image}
-                              alt={product.name}
-                              style={{ cursor: (product.images && product.images.length) ? 'pointer' : 'default' }}
-                              onClick={() => {
-                                if (product.images && product.images.length) openGallery(product.images, 0);
-                              }}
-                            />
-                          </td>
-                      <td>{product.name}</td>
-                      <td>{categories.find((c) => c.id === product.categoryId)?.name}</td>
-                      <td>₹{product.price}</td>
-                      <td>
-                        <div className="stock-quick-edit">
-                          <button onClick={() => updateStock(product.id, -1)}>−</button>
-                          <span className={`stock-badge ${product.stock < 10 ? "low" : ""}`}>
-                            {product.stock}
-                          </span>
-                          <button onClick={() => updateStock(product.id, 1)}>+</button>
-                        </div>
-                      </td>
-                      <td className="actions-cell">
-                        <button className="edit-btn" onClick={() => handleEdit(product)}>Edit</button>
-                        <button className="delete-btn" onClick={() => handleDelete(product.id)}>Delete</button>
-                      </td>
+            {loading ? (
+              <p>Loading...</p>
+            ) : (
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>Name</th>
+                      <th>Category</th>
+                      <th>Price</th>
+                      <th>Stock</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {productList.map((product) => (
+                      <tr key={product.id}>
+                        <td><img src={product.image} alt={product.name} /></td>
+                        <td>{product.name}</td>
+                        <td>{categories.find((c) => c.id === product.categoryId)?.name}</td>
+                        <td>₹{product.price}</td>
+                        <td>
+                          <div className="stock-quick-edit">
+                            <button onClick={() => updateStock(product.id, -1)}>−</button>
+                            <span className={`stock-badge ${product.stock < 10 ? "low" : ""}`}>
+                              {product.stock}
+                            </span>
+                            <button onClick={() => updateStock(product.id, 1)}>+</button>
+                          </div>
+                        </td>
+                        <td className="actions-cell">
+                          <button className="edit-btn" onClick={() => handleEdit(product)}>Edit</button>
+                          <button className="delete-btn" onClick={() => handleDelete(product.id)}>Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </main>
-      {gallery.open && (
-        <div className="image-modal" onClick={closeGallery}>
-          <div className="image-modal-inner" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={closeGallery}>✕</button>
-            <img src={gallery.images[gallery.index]} alt={`img-${gallery.index}`} />
-            <div className="modal-controls">
-              <button onClick={prevImage}>‹ Prev</button>
-              <button onClick={nextImage}>Next ›</button>
-            </div>
-            <div className="modal-thumbs">
-              {gallery.images.map((src, i) => (
-                <img key={i} src={src} className={i === gallery.index ? 'active' : ''} onClick={() => setGallery((g) => ({ ...g, index: i }))} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
